@@ -1,0 +1,2232 @@
+layer {                    
+  name: "data"            
+  type: "HDF5Data"           
+  top: "data"
+  top: "label"               
+  hdf5_data_param {          
+    source: "/home/gyn/SR/DBPN/train.txt"
+    batch_size: 16
+    shuffle: True
+  }
+  include: { phase: TRAIN }      
+}
+layer {                    
+  name: "data"            
+  type: "HDF5Data"           
+  top: "data"
+  top: "label"               
+  hdf5_data_param {          
+    source: "/home/gyn/SR/DBPN/test.txt"
+    batch_size: 2  
+    shuffle: False
+  }
+  include: { phase: TEST }      
+}
+
+
+layer {
+  name: "Convolution_first"
+  type: "Convolution"
+  bottom: "data"
+  top: "Convolution_first"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:256
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm: 2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_first"
+  type: "PReLU"
+  bottom: "Convolution_first"
+  top: "Convolution_first"
+}
+
+layer {
+  name: "Convolution_second"
+  type: "Convolution"
+  bottom: "Convolution_first"
+  top: "Convolution_second"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_second"
+  type: "PReLU"
+  bottom: "Convolution_second"
+  top: "Convolution_second"
+}
+
+layer {
+  name: "Deconvolution1_1_u"
+  type: "Deconvolution"
+  bottom: "Convolution_second"
+  top: "Deconvolution1_1_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_1_u"
+  type: "PReLU"
+  bottom: "Deconvolution1_1_u"
+  top: "Deconvolution1_1_u"
+}
+
+layer {
+  name: "Convolution2_1_u"
+  type: "Convolution"
+  bottom: "Deconvolution1_1_u"
+  top: "Convolution2_1_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_1_u"
+  type: "PReLU"
+  bottom: "Convolution2_1_u"
+  top: "Convolution2_1_u"
+ }
+
+layer {
+  name: "sub_1_u"
+  type: "Eltwise"
+  bottom: "Convolution2_1_u"
+  bottom: "Convolution_second"
+  top: "sub_1_u"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+
+layer {
+  name: "Deconvolution3_1_u"
+  type: "Deconvolution"
+  bottom: "sub_1_u"
+  top: "Deconvolution3_1_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_1_u"
+  type: "PReLU"
+  bottom: "Deconvolution3_1_u"
+  top: "Deconvolution3_1_u"
+}
+
+layer {
+  name: "sum_1_u"
+  type: "Eltwise"
+  bottom: "Deconvolution1_1_u"
+  bottom: "Deconvolution3_1_u"
+  top: "sum_1_u"
+  eltwise_param {
+    operation: 1
+  }
+}
+
+layer {
+  name: "Convolution1_1_d"
+  type: "Convolution"
+  bottom: "sum_1_u"
+  top: "Convolution1_1_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_1_d"
+  type: "PReLU"
+  bottom: "Convolution1_1_d"
+  top: "Convolution1_1_d"
+ }
+
+layer {
+  name: "Deconvolution2_1_d"
+  type: "Deconvolution"
+  bottom: "Convolution1_1_d"
+  top: "Deconvolution2_1_d"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_1_d"
+  type: "PReLU"
+  bottom: "Deconvolution2_1_d"
+  top: "Deconvolution2_1_d"
+}
+
+layer {
+  name: "sub_1_d"
+  type: "Eltwise"
+  bottom: "Deconvolution2_1_d"
+  bottom: "sum_1_u"
+  top: "sub_1_d"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+layer {
+  name: "Convolution3_1_d"
+  type: "Convolution"
+  bottom: "sub_1_d"
+  top: "Convolution3_1_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_1_d"
+  type: "PReLU"
+  bottom: "Convolution3_1_d"
+  top: "Convolution3_1_d"
+ }
+
+layer {
+  name: "sum_1_d"
+  type: "Eltwise"
+  bottom: "Convolution3_1_d"
+  bottom: "Convolution1_1_d"
+  top: "sum_1_d"
+  eltwise_param {
+    operation: 1
+  }
+}
+
+layer {
+  name: "Deconvolution1_2_u"
+  type: "Deconvolution"
+  bottom: "sum_1_d"
+  top: "Deconvolution1_2_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_2_u"
+  type: "PReLU"
+  bottom: "Deconvolution1_2_u"
+  top: "Deconvolution1_2_u"
+}
+
+layer {
+  name: "Convolution2_2_u"
+  type: "Convolution"
+  bottom: "Deconvolution1_2_u"
+  top: "Convolution2_2_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_2_u"
+  type: "PReLU"
+  bottom: "Convolution2_2_u"
+  top: "Convolution2_2_u"
+ }
+
+layer {
+  name: "sub_2_u"
+  type: "Eltwise"
+  bottom: "Convolution2_2_u"
+  bottom: "sum_1_d"
+  top: "sub_2_u"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+
+layer {
+  name: "Deconvolution3_2_u"
+  type: "Deconvolution"
+  bottom: "sub_2_u"
+  top: "Deconvolution3_2_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_2_u"
+  type: "PReLU"
+  bottom: "Deconvolution3_2_u"
+  top: "Deconvolution3_2_u"
+}
+
+layer {
+  name: "sum_2_u"
+  type: "Eltwise"
+  bottom: "Deconvolution1_2_u"
+  bottom: "Deconvolution3_2_u"
+  top: "sum_2_u"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat1"
+  type: "Concat"
+  bottom: "sum_1_u"
+  bottom: "sum_2_u"
+  top: "Concat1"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_2_d"
+  type: "Convolution"
+  bottom: "Concat1"
+  top: "Convolution_2_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_2_d"
+  type: "PReLU"
+  bottom: "Convolution_2_d"
+  top: "Convolution_2_d"
+}
+
+layer {
+  name: "Convolution1_2_d"
+  type: "Convolution"
+  bottom: "Convolution_2_d"
+  top: "Convolution1_2_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_2_d"
+  type: "PReLU"
+  bottom: "Convolution1_2_d"
+  top: "Convolution1_2_d"
+ }
+
+layer {
+  name: "Deconvolution2_2_d"
+  type: "Deconvolution"
+  bottom: "Convolution1_2_d"
+  top: "Deconvolution2_2_d"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_2_d"
+  type: "PReLU"
+  bottom: "Deconvolution2_2_d"
+  top: "Deconvolution2_2_d"
+}
+
+layer {
+  name: "sub_2_d"
+  type: "Eltwise"
+  bottom: "Deconvolution2_2_d"
+  bottom: "Convolution_2_d"
+  top: "sub_2_d"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+layer {
+  name: "Convolution3_2_d"
+  type: "Convolution"
+  bottom: "sub_2_d"
+  top: "Convolution3_2_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_2_d"
+  type: "PReLU"
+  bottom: "Convolution3_2_d"
+  top: "Convolution3_2_d"
+ }
+
+layer {
+  name: "sum_2_d"
+  type: "Eltwise"
+  bottom: "Convolution3_2_d"
+  bottom: "Convolution1_2_d"
+  top: "sum_2_d"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat2"
+  type: "Concat"
+  bottom: "sum_1_d"
+  bottom: "sum_2_d"
+  top: "Concat2"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_3_u"
+  type: "Convolution"
+  bottom: "Concat2"
+  top: "Convolution_3_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_3_u"
+  type: "PReLU"
+  bottom: "Convolution_3_u"
+  top: "Convolution_3_u"
+}
+
+layer {
+  name: "Deconvolution1_3_u"
+  type: "Deconvolution"
+  bottom: "Convolution_3_u"
+  top: "Deconvolution1_3_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_3_u"
+  type: "PReLU"
+  bottom: "Deconvolution1_3_u"
+  top: "Deconvolution1_3_u"
+}
+
+layer {
+  name: "Convolution2_3_u"
+  type: "Convolution"
+  bottom: "Deconvolution1_3_u"
+  top: "Convolution2_3_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_3_u"
+  type: "PReLU"
+  bottom: "Convolution2_3_u"
+  top: "Convolution2_3_u"
+ }
+
+layer {
+  name: "sub_3_u"
+  type: "Eltwise"
+  bottom: "Convolution2_3_u"
+  bottom: "Convolution_3_u"
+  top: "sub_3_u"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+
+layer {
+  name: "Deconvolution3_3_u"
+  type: "Deconvolution"
+  bottom: "sub_3_u"
+  top: "Deconvolution3_3_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_3_u"
+  type: "PReLU"
+  bottom: "Deconvolution3_3_u"
+  top: "Deconvolution3_3_u"
+}
+
+layer {
+  name: "sum_3_u"
+  type: "Eltwise"
+  bottom: "Deconvolution1_3_u"
+  bottom: "Deconvolution3_3_u"
+  top: "sum_3_u"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat3"
+  type: "Concat"
+  bottom: "sum_1_u"
+  bottom: "sum_2_u"
+  bottom: "sum_3_u"
+  top: "Concat3"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_3_d"
+  type: "Convolution"
+  bottom: "Concat3"
+  top: "Convolution_3_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_3_d"
+  type: "PReLU"
+  bottom: "Convolution_3_d"
+  top: "Convolution_3_d"
+}
+
+layer {
+  name: "Convolution1_3_d"
+  type: "Convolution"
+  bottom: "Convolution_3_d"
+  top: "Convolution1_3_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_3_d"
+  type: "PReLU"
+  bottom: "Convolution1_3_d"
+  top: "Convolution1_3_d"
+ }
+
+layer {
+  name: "Deconvolution2_3_d"
+  type: "Deconvolution"
+  bottom: "Convolution1_3_d"
+  top: "Deconvolution2_3_d"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_3_d"
+  type: "PReLU"
+  bottom: "Deconvolution2_3_d"
+  top: "Deconvolution2_3_d"
+}
+
+layer {
+  name: "sub_3_d"
+  type: "Eltwise"
+  bottom: "Deconvolution2_3_d"
+  bottom: "Convolution_3_d"
+  top: "sub_3_d"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+layer {
+  name: "Convolution3_3_d"
+  type: "Convolution"
+  bottom: "sub_3_d"
+  top: "Convolution3_3_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_3_d"
+  type: "PReLU"
+  bottom: "Convolution3_3_d"
+  top: "Convolution3_3_d"
+ }
+
+layer {
+  name: "sum_3_d"
+  type: "Eltwise"
+  bottom: "Convolution3_3_d"
+  bottom: "Convolution1_3_d"
+  top: "sum_3_d"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat4"
+  type: "Concat"
+  bottom: "sum_1_d"
+  bottom: "sum_2_d"
+  bottom: "sum_3_d"
+  top: "Concat4"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_4_u"
+  type: "Convolution"
+  bottom: "Concat4"
+  top: "Convolution_4_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_4_u"
+  type: "PReLU"
+  bottom: "Convolution_4_u"
+  top: "Convolution_4_u"
+}
+
+layer {
+  name: "Deconvolution1_4_u"
+  type: "Deconvolution"
+  bottom: "Convolution_4_u"
+  top: "Deconvolution1_4_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_4_u"
+  type: "PReLU"
+  bottom: "Deconvolution1_4_u"
+  top: "Deconvolution1_4_u"
+}
+
+layer {
+  name: "Convolution2_4_u"
+  type: "Convolution"
+  bottom: "Deconvolution1_4_u"
+  top: "Convolution2_4_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_4_u"
+  type: "PReLU"
+  bottom: "Convolution2_4_u"
+  top: "Convolution2_4_u"
+ }
+
+layer {
+  name: "sub_4_u"
+  type: "Eltwise"
+  bottom: "Convolution2_4_u"
+  bottom: "Convolution_4_u"
+  top: "sub_4_u"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+
+layer {
+  name: "Deconvolution3_4_u"
+  type: "Deconvolution"
+  bottom: "sub_4_u"
+  top: "Deconvolution3_4_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_4_u"
+  type: "PReLU"
+  bottom: "Deconvolution3_4_u"
+  top: "Deconvolution3_4_u"
+}
+
+layer {
+  name: "sum_4_u"
+  type: "Eltwise"
+  bottom: "Deconvolution1_4_u"
+  bottom: "Deconvolution3_4_u"
+  top: "sum_4_u"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat5"
+  type: "Concat"
+  bottom: "sum_1_u"
+  bottom: "sum_2_u"
+  bottom: "sum_3_u"
+  bottom: "sum_4_u"
+  top: "Concat5"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_4_d"
+  type: "Convolution"
+  bottom: "Concat5"
+  top: "Convolution_4_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_4_d"
+  type: "PReLU"
+  bottom: "Convolution_4_d"
+  top: "Convolution_4_d"
+}
+
+layer {
+  name: "Convolution1_4_d"
+  type: "Convolution"
+  bottom: "Convolution_4_d"
+  top: "Convolution1_4_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_4_d"
+  type: "PReLU"
+  bottom: "Convolution1_4_d"
+  top: "Convolution1_4_d"
+ }
+
+layer {
+  name: "Deconvolution2_4_d"
+  type: "Deconvolution"
+  bottom: "Convolution1_4_d"
+  top: "Deconvolution2_4_d"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_4_d"
+  type: "PReLU"
+  bottom: "Deconvolution2_4_d"
+  top: "Deconvolution2_4_d"
+}
+
+layer {
+  name: "sub_4_d"
+  type: "Eltwise"
+  bottom: "Deconvolution2_4_d"
+  bottom: "Convolution_4_d"
+  top: "sub_4_d"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+layer {
+  name: "Convolution3_4_d"
+  type: "Convolution"
+  bottom: "sub_4_d"
+  top: "Convolution3_4_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_4_d"
+  type: "PReLU"
+  bottom: "Convolution3_4_d"
+  top: "Convolution3_4_d"
+ }
+
+layer {
+  name: "sum_4_d"
+  type: "Eltwise"
+  bottom: "Convolution3_4_d"
+  bottom: "Convolution1_4_d"
+  top: "sum_4_d"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat6"
+  type: "Concat"
+  bottom: "sum_1_d"
+  bottom: "sum_2_d"
+  bottom: "sum_3_d"
+  bottom: "sum_4_d"
+  top: "Concat6"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_5_u"
+  type: "Convolution"
+  bottom: "Concat6"
+  top: "Convolution_5_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_5_u"
+  type: "PReLU"
+  bottom: "Convolution_5_u"
+  top: "Convolution_5_u"
+}
+
+layer {
+  name: "Deconvolution1_5_u"
+  type: "Deconvolution"
+  bottom: "Convolution_5_u"
+  top: "Deconvolution1_5_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_5_u"
+  type: "PReLU"
+  bottom: "Deconvolution1_5_u"
+  top: "Deconvolution1_5_u"
+}
+
+layer {
+  name: "Convolution2_5_u"
+  type: "Convolution"
+  bottom: "Deconvolution1_5_u"
+  top: "Convolution2_5_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_5_u"
+  type: "PReLU"
+  bottom: "Convolution2_5_u"
+  top: "Convolution2_5_u"
+ }
+
+layer {
+  name: "sub_5_u"
+  type: "Eltwise"
+  bottom: "Convolution2_5_u"
+  bottom: "Convolution_5_u"
+  top: "sub_5_u"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+
+layer {
+  name: "Deconvolution3_5_u"
+  type: "Deconvolution"
+  bottom: "sub_5_u"
+  top: "Deconvolution3_5_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_5_u"
+  type: "PReLU"
+  bottom: "Deconvolution3_5_u"
+  top: "Deconvolution3_5_u"
+}
+
+layer {
+  name: "sum_5_u"
+  type: "Eltwise"
+  bottom: "Deconvolution1_5_u"
+  bottom: "Deconvolution3_5_u"
+  top: "sum_5_u"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat7"
+  type: "Concat"
+  bottom: "sum_1_u"
+  bottom: "sum_2_u"
+  bottom: "sum_3_u"
+  bottom: "sum_4_u"
+  bottom: "sum_5_u"
+  top: "Concat7"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_5_d"
+  type: "Convolution"
+  bottom: "Concat7"
+  top: "Convolution_5_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_5_d"
+  type: "PReLU"
+  bottom: "Convolution_5_d"
+  top: "Convolution_5_d"
+}
+
+layer {
+  name: "Convolution1_5_d"
+  type: "Convolution"
+  bottom: "Convolution_5_d"
+  top: "Convolution1_5_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_5_d"
+  type: "PReLU"
+  bottom: "Convolution1_5_d"
+  top: "Convolution1_5_d"
+ }
+
+layer {
+  name: "Deconvolution2_5_d"
+  type: "Deconvolution"
+  bottom: "Convolution1_5_d"
+  top: "Deconvolution2_5_d"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_5_d"
+  type: "PReLU"
+  bottom: "Deconvolution2_5_d"
+  top: "Deconvolution2_5_d"
+}
+
+layer {
+  name: "sub_5_d"
+  type: "Eltwise"
+  bottom: "Deconvolution2_5_d"
+  bottom: "Convolution_5_d"
+  top: "sub_5_d"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+layer {
+  name: "Convolution3_5_d"
+  type: "Convolution"
+  bottom: "sub_5_d"
+  top: "Convolution3_5_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_5_d"
+  type: "PReLU"
+  bottom: "Convolution3_5_d"
+  top: "Convolution3_5_d"
+ }
+
+layer {
+  name: "sum_5_d"
+  type: "Eltwise"
+  bottom: "Convolution3_5_d"
+  bottom: "Convolution1_5_d"
+  top: "sum_5_d"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat8"
+  type: "Concat"
+  bottom: "sum_1_d"
+  bottom: "sum_2_d"
+  bottom: "sum_3_d"
+  bottom: "sum_4_d"
+  bottom: "sum_5_d"
+  top: "Concat8"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_6_u"
+  type: "Convolution"
+  bottom: "Concat8"
+  top: "Convolution_6_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_6_u"
+  type: "PReLU"
+  bottom: "Convolution_6_u"
+  top: "Convolution_6_u"
+}
+
+layer {
+  name: "Deconvolution1_6_u"
+  type: "Deconvolution"
+  bottom: "Convolution_6_u"
+  top: "Deconvolution1_6_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_6_u"
+  type: "PReLU"
+  bottom: "Deconvolution1_6_u"
+  top: "Deconvolution1_6_u"
+}
+
+layer {
+  name: "Convolution2_6_u"
+  type: "Convolution"
+  bottom: "Deconvolution1_6_u"
+  top: "Convolution2_6_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_6_u"
+  type: "PReLU"
+  bottom: "Convolution2_6_u"
+  top: "Convolution2_6_u"
+ }
+
+layer {
+  name: "sub_6_u"
+  type: "Eltwise"
+  bottom: "Convolution2_6_u"
+  bottom: "Convolution_6_u"
+  top: "sub_6_u"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+
+layer {
+  name: "Deconvolution3_6_u"
+  type: "Deconvolution"
+  bottom: "sub_6_u"
+  top: "Deconvolution3_6_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_6_u"
+  type: "PReLU"
+  bottom: "Deconvolution3_6_u"
+  top: "Deconvolution3_6_u"
+}
+
+layer {
+  name: "sum_6_u"
+  type: "Eltwise"
+  bottom: "Deconvolution1_6_u"
+  bottom: "Deconvolution3_6_u"
+  top: "sum_6_u"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat9"
+  type: "Concat"
+  bottom: "sum_1_u"
+  bottom: "sum_2_u"
+  bottom: "sum_3_u"
+  bottom: "sum_4_u"
+  bottom: "sum_5_u"
+  bottom: "sum_6_u"
+  top: "Concat9"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_6_d"
+  type: "Convolution"
+  bottom: "Concat9"
+  top: "Convolution_6_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_6_d"
+  type: "PReLU"
+  bottom: "Convolution_6_d"
+  top: "Convolution_6_d"
+}
+
+layer {
+  name: "Convolution1_6_d"
+  type: "Convolution"
+  bottom: "Convolution_6_d"
+  top: "Convolution1_6_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_6_d"
+  type: "PReLU"
+  bottom: "Convolution1_6_d"
+  top: "Convolution1_6_d"
+ }
+
+layer {
+  name: "Deconvolution2_6_d"
+  type: "Deconvolution"
+  bottom: "Convolution1_6_d"
+  top: "Deconvolution2_6_d"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_6_d"
+  type: "PReLU"
+  bottom: "Deconvolution2_6_d"
+  top: "Deconvolution2_6_d"
+}
+
+layer {
+  name: "sub_6_d"
+  type: "Eltwise"
+  bottom: "Deconvolution2_6_d"
+  bottom: "Convolution_6_d"
+  top: "sub_6_d"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+layer {
+  name: "Convolution3_6_d"
+  type: "Convolution"
+  bottom: "sub_6_d"
+  top: "Convolution3_6_d"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_6_d"
+  type: "PReLU"
+  bottom: "Convolution3_6_d"
+  top: "Convolution3_6_d"
+ }
+
+layer {
+  name: "sum_6_d"
+  type: "Eltwise"
+  bottom: "Convolution3_6_d"
+  bottom: "Convolution1_6_d"
+  top: "sum_6_d"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat10"
+  type: "Concat"
+  bottom: "sum_1_d"
+  bottom: "sum_2_d"
+  bottom: "sum_3_d"
+  bottom: "sum_4_d"
+  bottom: "sum_5_d"
+  bottom: "sum_6_d"
+  top: "Concat10"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "Convolution_7_u"
+  type: "Convolution"
+  bottom: "Concat10"
+  top: "Convolution_7_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_7_u"
+  type: "PReLU"
+  bottom: "Convolution_7_u"
+  top: "Convolution_7_u"
+}
+
+layer {
+  name: "Deconvolution1_7_u"
+  type: "Deconvolution"
+  bottom: "Convolution_7_u"
+  top: "Deconvolution1_7_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU1_7_u"
+  type: "PReLU"
+  bottom: "Deconvolution1_7_u"
+  top: "Deconvolution1_7_u"
+}
+
+layer {
+  name: "Convolution2_7_u"
+  type: "Convolution"
+  bottom: "Deconvolution1_7_u"
+  top: "Convolution2_7_u"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:64
+    pad: 2
+    kernel_size: 6
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU2_7_u"
+  type: "PReLU"
+  bottom: "Convolution2_7_u"
+  top: "Convolution2_7_u"
+ }
+
+layer {
+  name: "sub_7_u"
+  type: "Eltwise"
+  bottom: "Convolution2_7_u"
+  bottom: "Convolution_7_u"
+  top: "sub_7_u"
+  eltwise_param {
+    operation: SUM
+    coeff:1
+    coeff:-1
+  }
+}
+
+layer {
+  name: "Deconvolution3_7_u"
+  type: "Deconvolution"
+  bottom: "sub_7_u"
+  top: "Deconvolution3_7_u"
+  param {
+    lr_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+  }
+  convolution_param {
+    num_output:64
+    pad: 1
+    kernel_size:4
+    stride: 2
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+      
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU3_7_u"
+  type: "PReLU"
+  bottom: "Deconvolution3_7_u"
+  top: "Deconvolution3_7_u"
+}
+
+layer {
+  name: "sum_7_u"
+  type: "Eltwise"
+  bottom: "Deconvolution1_7_u"
+  bottom: "Deconvolution3_7_u"
+  top: "sum_7_u"
+  eltwise_param {
+    operation: 1
+  }
+}
+layer {
+  name: "Concat_end"
+  type: "Concat"
+  bottom: "sum_1_u"
+  bottom: "sum_2_u"
+  bottom: "sum_3_u"
+  bottom: "sum_4_u"
+  bottom: "sum_5_u"
+  bottom: "sum_6_u"
+  bottom: "sum_7_u"
+  top: "Concat_end"
+  concat_param {
+    axis: 1
+  }
+}
+
+layer {
+  name: "Convolution_end"
+  type: "Convolution"
+  bottom: "Concat_end"
+  top: "Convolution_end"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 1
+  }
+  convolution_param {
+    num_output:3
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "msra"
+      variance_norm:2
+     
+    }
+    bias_filler {
+      type: "constant"
+      value:0
+    }
+  }
+}
+layer {
+  name: "ReLU_end"
+  type: "PReLU"
+  bottom: "Convolution_end"
+  top: "Convolution_end"
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "Convolution_end"
+  bottom: "label"
+  top: "loss"
+  loss_weight: 1
+}

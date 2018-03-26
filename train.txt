@@ -1,0 +1,4 @@
+/home/gyn/SR/DBPN/train_x2_h5/train1.h5
+/home/gyn/SR/DBPN/train_x2_h5/train2.h5
+/home/gyn/SR/DBPN/train_x2_h5/train3.h5
+/home/gyn/SR/DBPN/train_x2_h5/train4.h5
