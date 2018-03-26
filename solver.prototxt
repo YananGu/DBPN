@@ -1,7 +1,7 @@
 # The train/test net protocol buffer definition
 net: "/home/gyn/SR/DBPN/dbpn_ms_gu.prototxt"
 test_iter: 15008
-# Carry out testing every 15008 training iterations.
+# Carry out testing every 14732 training iterations.
 test_interval: 14732
 type: "Adam"
 base_lr: 0.0001
